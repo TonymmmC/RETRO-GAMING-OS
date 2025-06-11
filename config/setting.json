@@ -1,0 +1,14 @@
+{
+  "theme": "dark",
+  "resolution": [1100, 700],
+  "fullscreen": false,
+  "sound_enabled": true,
+  "boot_animation": true,
+  "games_directory": "./games/",
+  "last_played": [],
+  "performance_mode": "balanced",
+  "auto_scan_games": true,
+  "minimize_to_tray": false,
+  "fps_overlay": false,
+  "accent_color": "#007AFF"
+}

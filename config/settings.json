@@ -7,7 +7,7 @@
   "fullscreen": false,
   "sound_enabled": true,
   "boot_animation": true,
-  "scan_lines": true,
   "games_directory": "./games/",
-  "last_played": []
+  "last_played": [],
+  "scan_lines": true
 }

@@ -1,66 +1,42 @@
 [
   {
-    "title": "SNAKE RETRO",
+    "title": "Snake Modern",
     "filename": "snake.py",
     "category": "CLASSIC",
-    "description": "Classic snake game with retro twist and growing mechanics",
+    "description": "Classic snake game with modern sleek design and smooth animations",
     "builtin": true,
-    "playable": true
+    "playable": true,
+    "rating": 4.5,
+    "icon": "🐍"
   },
   {
-    "title": "RETRO PONG",
+    "title": "Tetris Modern",
+    "filename": "tetris.py", 
+    "category": "PUZZLE",
+    "description": "Block puzzle game with contemporary UI and theme switching",
+    "builtin": true,
+    "playable": true,
+    "rating": 4.8,
+    "icon": "🧩"
+  },
+  {
+    "title": "Pong Modern",
     "filename": "pong.py", 
     "category": "ARCADE",
-    "description": "Two-player pong game with AI opponent",
+    "description": "Two-player classic reimagined with modern physics and AI",
     "builtin": true,
-    "playable": true
+    "playable": true,
+    "rating": 4.2,
+    "icon": "🏓"
   },
   {
-    "title": "TETRIS RETRO",
-    "filename": "tetris.py",
-    "category": "PUZZLE",
-    "description": "Falling blocks puzzle game with authentic mechanics",
-    "builtin": true,
-    "playable": true
-  },
-  {
-    "title": "SPACE INVADERS",
-    "filename": "invaders.py",
-    "category": "ARCADE", 
-    "description": "Defend Earth from alien invasion with power-ups",
-    "builtin": true,
-    "playable": true
-  },
-  {
-    "title": "BREAKOUT RETRO",
+    "title": "Breakout Modern",
     "filename": "breakout.py",
-    "category": "ARCADE",
-    "description": "Break all bricks with power-ups and combos",
+    "category": "ARCADE", 
+    "description": "Break all bricks with power-ups and modern particle effects",
     "builtin": true,
-    "playable": true
-  },
-  {
-    "title": "FROGGER CLONE",
-    "filename": "frogger.py",
-    "category": "ACTION",
-    "description": "Cross the road and river safely",
-    "builtin": true,
-    "playable": false
-  },
-  {
-    "title": "CENTIPEDE",
-    "filename": "centipede.py",
-    "category": "ARCADE",
-    "description": "Shoot the descending centipede",
-    "builtin": true,
-    "playable": false
-  },
-  {
-    "title": "ASTEROIDS",
-    "filename": "asteroids.py",
-    "category": "ACTION",
-    "description": "Destroy asteroids in space",
-    "builtin": true,
-    "playable": false
+    "playable": true,
+    "rating": 4.6,
+    "icon": "🧱"
   }
 ]
