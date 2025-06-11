@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Pong Modern - Clásico juego de pong con diseño moderno y minimalista
-Compatible con Gaming Modern OS
+Pong Modern - VERSIÓN CORREGIDA
+Modo AI y 2 jugadores garantizado que funciona
 """
 
 import pygame
@@ -18,40 +18,22 @@ class PongModern:
         self.width = 800
         self.height = 600
         self.screen = pygame.display.set_mode((self.width, self.height))
-        pygame.display.set_caption("Pong Modern")
+        pygame.display.set_caption("Pong Modern - Fixed")
         
-        # Tema moderno - Dark mode por defecto
-        self.dark_mode = True
-        self.themes = {
-            'dark': {
-                'bg_primary': (26, 26, 26),          # #1a1a1a
-                'bg_secondary': (45, 45, 45),        # #2d2d2d
-                'bg_surface': (61, 61, 61),          # #3d3d3d
-                'text_primary': (255, 255, 255),     # #ffffff
-                'text_secondary': (160, 160, 160),   # #a0a0a0
-                'accent_player1': (0, 122, 255),     # #007AFF - Azul
-                'accent_player2': (255, 149, 0),     # #FF9500 - Naranja
-                'ball': (52, 199, 89),               # #34C759 - Verde
-                'grid_line': (61, 61, 61),           # Línea central
-                'shadow': (0, 0, 0, 60)
-            },
-            'light': {
-                'bg_primary': (248, 249, 250),       # #f8f9fa
-                'bg_secondary': (255, 255, 255),     # #ffffff
-                'bg_surface': (233, 236, 239),       # #e9ecef
-                'text_primary': (33, 37, 41),        # #212529
-                'text_secondary': (108, 117, 125),   # #6c757d
-                'accent_player1': (0, 122, 255),     # #007AFF - Azul
-                'accent_player2': (255, 149, 0),     # #FF9500 - Naranja
-                'ball': (40, 167, 69),               # #28a745 - Verde
-                'grid_line': (220, 220, 220),        # Línea central
-                'shadow': (0, 0, 0, 30)
-            }
+        # Tema moderno
+        self.colors = {
+            'bg_primary': (26, 26, 26),
+            'bg_secondary': (45, 45, 45),
+            'text_primary': (255, 255, 255),
+            'text_secondary': (160, 160, 160),
+            'accent_player1': (0, 122, 255),      # Azul
+            'accent_player2': (255, 149, 0),      # Naranja
+            'ball': (52, 199, 89),                # Verde
+            'grid_line': (61, 61, 61),
+            'shadow': (0, 0, 0, 60)
         }
         
-        self.colors = self.themes['dark'].copy()
-        
-        # Fuentes modernas
+        # Fuentes
         self.fonts = {
             'title': pygame.font.Font(None, 72),
             'large': pygame.font.Font(None, 48),
@@ -62,6 +44,11 @@ class PongModern:
         
         # Estado del juego
         self.game_state = "menu"
+        
+        # CONFIGURACIÓN CRUCIAL - AI
+        self.ai_enabled = True  # Por defecto AI activada
+        self.ai_difficulty = 0.75
+        
         self.reset_game()
         
         # Control
@@ -71,7 +58,6 @@ class PongModern:
         
     def reset_game(self):
         """Reiniciar juego"""
-        # Paletas
         paddle_width = 15
         paddle_height = 80
         
@@ -93,7 +79,6 @@ class PongModern:
             'score': 0
         }
         
-        # Pelota
         self.ball = {
             'x': self.width // 2,
             'y': self.height // 2,
@@ -104,10 +89,7 @@ class PongModern:
             'trail': []
         }
         
-        # Configuración
         self.winning_score = 5
-        self.ai_enabled = True
-        self.ai_difficulty = 0.8
         
     def play_sound(self, sound_type):
         """Sonidos modernos"""
@@ -117,7 +99,7 @@ class PongModern:
                 'wall_hit': 600,
                 'score': 1000,
                 'menu': 400,
-                'theme': 900
+                'ai_toggle': 1200
             }
             
             freq = frequencies.get(sound_type, 800)
@@ -138,26 +120,6 @@ class PongModern:
         except:
             pass
     
-    def toggle_theme(self):
-        """Cambiar tema"""
-        self.dark_mode = not self.dark_mode
-        theme_name = 'dark' if self.dark_mode else 'light'
-        self.colors = self.themes[theme_name].copy()
-        self.play_sound('theme')
-    
-    def draw_modern_card(self, surface, rect, color, radius=12, shadow=True):
-        """Dibujar card moderna"""
-        if shadow:
-            # Sombra
-            shadow_rect = pygame.Rect(rect.x + 4, rect.y + 4, rect.width, rect.height)
-            shadow_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-            pygame.draw.rect(shadow_surface, self.colors['shadow'], 
-                           (0, 0, rect.width, rect.height), border_radius=radius)
-            surface.blit(shadow_surface, shadow_rect.topleft)
-        
-        # Card principal
-        pygame.draw.rect(surface, color, rect, border_radius=radius)
-    
     def handle_events(self):
         """Manejar eventos"""
         for event in pygame.event.get():
@@ -176,6 +138,7 @@ class PongModern:
                     if self.game_state == "menu":
                         self.game_state = "playing"
                         self.reset_game()
+                        print(f"GAME STARTED - AI Mode: {'ON' if self.ai_enabled else 'OFF'}")
                     elif self.game_state == "playing":
                         self.game_state = "paused"
                     elif self.game_state == "paused":
@@ -190,12 +153,11 @@ class PongModern:
                     self.game_state = "playing"
                     self.play_sound('menu')
                 
+                # TOGGLE AI - CRUCIAL
                 elif event.key == pygame.K_a:
                     self.ai_enabled = not self.ai_enabled
-                    self.play_sound('menu')
-
-                elif event.key == pygame.K_t:
-                    self.toggle_theme()
+                    print(f"AI TOGGLED: {'ON' if self.ai_enabled else 'OFF'}")
+                    self.play_sound('ai_toggle')
         
         return True
     
@@ -204,17 +166,19 @@ class PongModern:
         if self.game_state != "playing":
             return
         
-        # Controles del jugador 1
+        # CONTROLES JUGADOR 1 (SIEMPRE HUMANO)
         keys = pygame.key.get_pressed()
         if keys[pygame.K_w] and self.player1['y'] > 0:
             self.player1['y'] -= self.player1['speed']
         if keys[pygame.K_s] and self.player1['y'] < self.height - self.player1['height']:
             self.player1['y'] += self.player1['speed']
         
-        # Controles del jugador 2 (humano o AI)
+        # CONTROLES JUGADOR 2 - AQUÍ ESTÁ LA LÓGICA CRUCIAL
         if self.ai_enabled:
-            self.update_ai()
+            # MODO IA ACTIVADA
+            self.update_ai_player2()
         else:
+            # MODO 2 JUGADORES - CONTROLES HUMANOS
             if keys[pygame.K_UP] and self.player2['y'] > 0:
                 self.player2['y'] -= self.player2['speed']
             if keys[pygame.K_DOWN] and self.player2['y'] < self.height - self.player2['height']:
@@ -228,33 +192,34 @@ class PongModern:
             self.game_state = "game_over"
             self.play_sound('score')
     
-    def update_ai(self):
-        """Actualizar AI"""
+    def update_ai_player2(self):
+        """IA para el jugador 2 - FUNCIÓN SEPARADA"""
         ball_center_y = self.ball['y'] + self.ball['size'] // 2
         paddle_center_y = self.player2['y'] + self.player2['height'] // 2
         
         diff = ball_center_y - paddle_center_y
-        move_threshold = 10 * (1.0 - self.ai_difficulty)
+        move_threshold = 15 * (1.0 - self.ai_difficulty)
         move_speed = self.player2['speed'] * self.ai_difficulty
         
+        # Solo mover si la diferencia es significativa
         if abs(diff) > move_threshold:
             if diff > 0 and self.player2['y'] < self.height - self.player2['height']:
-                self.player2['y'] += min(move_speed, diff)
+                self.player2['y'] += min(move_speed, abs(diff))
             elif diff < 0 and self.player2['y'] > 0:
-                self.player2['y'] += max(-move_speed, diff)
+                self.player2['y'] -= min(move_speed, abs(diff))
     
     def update_ball(self):
         """Actualizar pelota"""
         # Trail de la pelota
         self.ball['trail'].append((self.ball['x'], self.ball['y']))
-        if len(self.ball['trail']) > 10:
+        if len(self.ball['trail']) > 8:
             self.ball['trail'].pop(0)
         
         # Mover pelota
         self.ball['x'] += self.ball['speed_x']
         self.ball['y'] += self.ball['speed_y']
         
-        # Colisión con paredes
+        # Colisión con paredes superiores/inferiores
         if self.ball['y'] <= 0 or self.ball['y'] >= self.height - self.ball['size']:
             self.ball['speed_y'] = -self.ball['speed_y']
             self.play_sound('wall_hit')
@@ -325,6 +290,17 @@ class PongModern:
             self.ball['speed_y'] = random.uniform(-4, 4)
         self.ball['trail'].clear()
     
+    def draw_modern_card(self, surface, rect, color, radius=12, shadow=True):
+        """Dibujar card moderna"""
+        if shadow:
+            shadow_rect = pygame.Rect(rect.x + 4, rect.y + 4, rect.width, rect.height)
+            shadow_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+            pygame.draw.rect(shadow_surface, self.colors['shadow'], 
+                           (0, 0, rect.width, rect.height), border_radius=radius)
+            surface.blit(shadow_surface, shadow_rect.topleft)
+        
+        pygame.draw.rect(surface, color, rect, border_radius=radius)
+    
     def draw_menu(self):
         """Dibujar menú moderno"""
         self.screen.fill(self.colors['bg_primary'])
@@ -332,47 +308,59 @@ class PongModern:
         # Título
         title_text = self.fonts['title'].render("PONG", True, self.colors['text_primary'])
         title_x = (self.width - title_text.get_width()) // 2
-        self.screen.blit(title_text, (title_x, 100))
+        self.screen.blit(title_text, (title_x, 80))
         
         # Subtítulo
-        subtitle = self.fonts['medium'].render("Modern Edition", True, self.colors['accent_player1'])
+        subtitle = self.fonts['medium'].render("Modern Edition - Fixed", True, self.colors['accent_player1'])
         sub_x = (self.width - subtitle.get_width()) // 2
-        self.screen.blit(subtitle, (sub_x, 160))
+        self.screen.blit(subtitle, (sub_x, 140))
         
         # Card principal del menú
         card_width = 500
-        card_height = 300
+        card_height = 350
         card_x = (self.width - card_width) // 2
-        card_y = self.height // 2 - card_height // 2 + 50
+        card_y = self.height // 2 - card_height // 2 + 30
         
         card_rect = pygame.Rect(card_x, card_y, card_width, card_height)
         self.draw_modern_card(self.screen, card_rect, self.colors['bg_secondary'])
         
         # Opciones del menú
         options_y = card_y + 40
+        
+        # INDICADOR CLARO DEL ESTADO DE AI
+        ai_status = "ON" if self.ai_enabled else "OFF"
+        ai_color = self.colors['accent_player1'] if self.ai_enabled else self.colors['accent_player2']
+        
         options = [
             ("SPACE - Start Game", self.colors['accent_player1']),
-            (f"A - Toggle AI ({'ON' if self.ai_enabled else 'OFF'})", self.colors['text_primary']),
-            ("T - Toggle Theme", self.colors['text_secondary']),
+            (f"A - AI Mode: {ai_status}", ai_color),
             ("ESC - Exit", self.colors['text_secondary'])
         ]
         
         for i, (option_text, color) in enumerate(options):
             text_render = self.fonts['medium'].render(option_text, True, color)
             text_x = card_x + (card_width - text_render.get_width()) // 2
-            self.screen.blit(text_render, (text_x, options_y + i * 50))
+            self.screen.blit(text_render, (text_x, options_y + i * 60))
         
-        # Controles en la parte inferior
+        # Controles detallados
         controls_y = card_y + 220
+        controls_title = self.fonts['small'].render("CONTROLS:", True, self.colors['text_primary'])
+        controls_title_x = card_x + (card_width - controls_title.get_width()) // 2
+        self.screen.blit(controls_title, (controls_title_x, controls_y))
+        
         controls = [
-            "Player 1: W / S",
-            f"Player 2: {'AI' if self.ai_enabled else '↑ / ↓'}"
+            "Player 1 (Left): W / S",
+            f"Player 2 (Right): {'AI Controlled' if self.ai_enabled else 'Flechas Arriba/Abajo'}",
+            "",
+            "Press A to toggle between AI and 2-Player mode"
         ]
         
         for i, control in enumerate(controls):
-            control_text = self.fonts['small'].render(control, True, self.colors['text_secondary'])
+            if control == "":
+                continue
+            control_text = self.fonts['tiny'].render(control, True, self.colors['text_secondary'])
             control_x = card_x + (card_width - control_text.get_width()) // 2
-            self.screen.blit(control_text, (control_x, controls_y + i * 25))
+            self.screen.blit(control_text, (control_x, controls_y + 25 + i * 18))
     
     def draw_game(self):
         """Dibujar juego"""
@@ -395,20 +383,10 @@ class PongModern:
                               self.player1['width'], self.player1['height'])
         pygame.draw.rect(self.screen, self.colors['accent_player1'], p1_rect, border_radius=8)
         
-        # Highlight
-        p1_highlight = pygame.Rect(p1_rect.x + 2, p1_rect.y + 2, p1_rect.width - 4, p1_rect.height // 4)
-        highlight_color = tuple(min(255, c + 40) for c in self.colors['accent_player1'])
-        pygame.draw.rect(self.screen, highlight_color, p1_highlight, border_radius=6)
-        
         # Player 2
         p2_rect = pygame.Rect(self.player2['x'] + shake_x, self.player2['y'] + shake_y, 
                               self.player2['width'], self.player2['height'])
         pygame.draw.rect(self.screen, self.colors['accent_player2'], p2_rect, border_radius=8)
-        
-        # Highlight
-        p2_highlight = pygame.Rect(p2_rect.x + 2, p2_rect.y + 2, p2_rect.width - 4, p2_rect.height // 4)
-        highlight_color = tuple(min(255, c + 40) for c in self.colors['accent_player2'])
-        pygame.draw.rect(self.screen, highlight_color, p2_highlight, border_radius=6)
         
         # Trail de la pelota
         for i, (trail_x, trail_y) in enumerate(self.ball['trail']):
@@ -428,13 +406,6 @@ class PongModern:
                          (ball_x + self.ball['size'] // 2, ball_y + self.ball['size'] // 2), 
                          self.ball['size'] // 2)
         
-        # Highlight en la pelota
-        highlight_x = ball_x + self.ball['size'] // 4
-        highlight_y = ball_y + self.ball['size'] // 4
-        highlight_color = tuple(min(255, c + 60) for c in self.colors['ball'])
-        pygame.draw.circle(self.screen, highlight_color, (highlight_x, highlight_y), 
-                         self.ball['size'] // 6)
-        
         # Puntuaciones
         score1_text = self.fonts['large'].render(str(self.player1['score']), True, self.colors['accent_player1'])
         score2_text = self.fonts['large'].render(str(self.player2['score']), True, self.colors['accent_player2'])
@@ -442,21 +413,25 @@ class PongModern:
         self.screen.blit(score1_text, (self.width // 2 - 100 + shake_x, 50 + shake_y))
         self.screen.blit(score2_text, (self.width // 2 + 80 + shake_x, 50 + shake_y))
         
-        # Indicadores de jugador
-        p1_label = "HUMAN"
-        p2_label = "AI" if self.ai_enabled else "HUMAN"
+        # INDICADORES CLAROS DE MODO
+        p1_label = "HUMAN (W/S)"
+        p2_label = "AI" if self.ai_enabled else "HUMAN (Flechas)"
         
-        label1 = self.fonts['small'].render(p1_label, True, self.colors['text_secondary'])
-        label2 = self.fonts['small'].render(p2_label, True, self.colors['text_secondary'])
+        label1 = self.fonts['tiny'].render(p1_label, True, self.colors['text_secondary'])
+        label2 = self.fonts['tiny'].render(p2_label, True, self.colors['text_secondary'])
         
-        self.screen.blit(label1, (self.player1['x'] + shake_x, 20 + shake_y))
-        self.screen.blit(label2, (self.player2['x'] + shake_x, 20 + shake_y))
+        self.screen.blit(label1, (self.player1['x'] + shake_x, 15 + shake_y))
+        self.screen.blit(label2, (self.player2['x'] - 30 + shake_x, 15 + shake_y))
         
         # Controles en la parte inferior
-        controls = f"W/S: P1 • {'AI Active' if self.ai_enabled else '↑/↓: P2'} • Space: Pause • T: Theme • Esc: Menu"
+        if self.ai_enabled:
+            controls = "W/S: Player 1 • AI: Automatic • A: Toggle AI • Space: Pause • Esc: Menu"
+        else:
+            controls = "W/S: Player 1 • Flechas: Player 2 • A: Toggle AI • Space: Pause • Esc: Menu"
+            
         controls_text = self.fonts['tiny'].render(controls, True, self.colors['text_secondary'])
         controls_x = (self.width - controls_text.get_width()) // 2
-        self.screen.blit(controls_text, (controls_x + shake_x, self.height - 30 + shake_y))
+        self.screen.blit(controls_text, (controls_x + shake_x, self.height - 25 + shake_y))
     
     def draw_overlay(self, title, subtitle="", action_text=""):
         """Overlay modal moderno"""
@@ -464,7 +439,6 @@ class PongModern:
         overlay.fill((0, 0, 0, 150))
         self.screen.blit(overlay, (0, 0))
         
-        # Modal card
         card_width = 400
         card_height = 200
         card_x = (self.width - card_width) // 2
@@ -474,20 +448,16 @@ class PongModern:
         self.draw_modern_card(self.screen, card_rect, self.colors['bg_secondary'], 
                              radius=16, shadow=True)
         
-        # Título
         title_text = self.fonts['large'].render(title, True, self.colors['text_primary'])
         title_x = card_x + (card_width - title_text.get_width()) // 2
         self.screen.blit(title_text, (title_x, card_y + 40))
         
-        # Subtítulo
         if subtitle:
             subtitle_text = self.fonts['medium'].render(subtitle, True, self.colors['text_secondary'])
             subtitle_x = card_x + (card_width - subtitle_text.get_width()) // 2
             self.screen.blit(subtitle_text, (subtitle_x, card_y + 85))
             
-        # Texto de acción
         if action_text:
-            # Efecto pulso
             pulse = 0.8 + 0.2 * math.sin(self.animation_time * 0.1)
             action_color = tuple(int(c * pulse) for c in self.colors['accent_player1'])
             
@@ -500,6 +470,14 @@ class PongModern:
     def run(self):
         """Loop principal"""
         running = True
+        
+        print("PONG MODERN - VERSION CORREGIDA")
+        print("Controles:")
+        print("   - A: Alternar IA ON/OFF")
+        print("   - Jugador 1: W/S")
+        print("   - Jugador 2: Flechas arriba/abajo (solo cuando IA OFF)")
+        print("   - SPACE: Jugar/Pausar")
+        print("   - ESC: Menu/Salir")
         
         while running:
             # Eventos
