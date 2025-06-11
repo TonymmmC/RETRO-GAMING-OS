@@ -1,0 +1,13 @@
+{
+  "theme": "green_phosphor",
+  "resolution": [
+    800,
+    600
+  ],
+  "fullscreen": false,
+  "sound_enabled": true,
+  "boot_animation": true,
+  "scan_lines": true,
+  "games_directory": "./games/",
+  "last_played": []
+}

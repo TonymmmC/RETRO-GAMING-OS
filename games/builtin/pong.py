@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Retro Pong - Clásico juego de pong con estilo retro
-Para usar dentro del Gaming OS
+Pong Modern - Clásico juego de pong con diseño minimalista y moderno
+Para usar dentro del Gaming OS, con alternancia de temas (claro/oscuro)
 """
 
 import pygame
@@ -9,7 +9,7 @@ import random
 import math
 import sys
 
-class PongGame:
+class PongModern:
     def __init__(self):
         pygame.init()
         pygame.mixer.init()
@@ -18,23 +18,54 @@ class PongGame:
         self.width = 800
         self.height = 600
         self.screen = pygame.display.set_mode((self.width, self.height))
-        pygame.display.set_caption("Retro Pong")
+        pygame.display.set_caption("Pong Modern")
         
-        # Colores retro
-        self.colors = {
-            'bg': (0, 0, 0),
-            'white': (255, 255, 255),
-            'green': (0, 255, 0),
-            'amber': (255, 191, 0),
-            'red': (255, 0, 0),
-            'gray': (128, 128, 128),
-            'dark_green': (0, 128, 0)
+        # Sistema de temas
+        self.dark_mode = False
+        self.themes = {
+            'light': {
+                'bg': (248, 249, 250),       # Gris muy claro
+                'card_bg': (255, 255, 255),  # Blanco para tarjetas/elementos UI
+                'grid_line': (233, 236, 239),# Gris claro para línea central
+                'border': (206, 212, 218),   # Gris medio para bordes
+                'text_primary': (33, 37, 41),# Casi negro para texto principal
+                'text_secondary': (108, 117, 125), # Gris para texto secundario
+                'accent_player1': (0, 123, 255), # Azul de acento (para P1)
+                'accent_player2': (255, 87, 34), # Naranja de acento (para P2)
+                'ball': (255, 193, 7),       # Amarillo/Ámbar para la pelota
+                'overlay': (255, 255, 255, 200), # Overlay claro
+                'shadow_light': (0, 0, 0, 20), # Sombra sutil
+                'shadow_dark': (0, 0, 0, 40),  # Sombra más intensa
+                'scanline_color': (0, 0, 0, 30) # Para el efecto de scanlines
+            },
+            'dark': {
+                'bg': (18, 18, 18),          # Negro suave
+                'card_bg': (33, 37, 41),     # Gris oscuro para tarjetas/elementos UI
+                'grid_line': (52, 58, 64),   # Gris medio para línea central
+                'border': (73, 80, 87),      # Gris claro para bordes
+                'text_primary': (248, 249, 250), # Blanco para texto principal
+                'text_secondary': (173, 181, 189), # Gris claro para texto secundario
+                'accent_player1': (13, 202, 240), # Cyan (para P1)
+                'accent_player2': (255, 127, 80), # Coral/Naranja (para P2)
+                'ball': (255, 212, 59),      # Amarillo más brillante para la pelota
+                'overlay': (33, 37, 41, 220), # Overlay oscuro
+                'shadow_light': (0, 0, 0, 40), # Sombra sutil
+                'shadow_dark': (0, 0, 0, 60),  # Sombra más intensa
+                'scanline_color': (0, 0, 0, 40) # Para el efecto de scanlines
+            }
         }
         
-        # Fuentes
-        self.font_large = pygame.font.Font(None, 72)
-        self.font_medium = pygame.font.Font(None, 36)
-        self.font_small = pygame.font.Font(None, 24)
+        # Colores actuales (empezar en modo claro)
+        self.colors = self.themes['light'].copy()
+        
+        # Fuentes modernas
+        self.fonts = {
+            'title': pygame.font.Font(None, 72),
+            'large': pygame.font.Font(None, 48),
+            'medium': pygame.font.Font(None, 32),
+            'small': pygame.font.Font(None, 22),
+            'tiny': pygame.font.Font(None, 16)
+        }
         
         # Estado del juego
         self.game_state = "menu"  # menu, playing, paused, game_over
@@ -44,7 +75,6 @@ class PongGame:
         self.clock = pygame.time.Clock()
         
         # Efectos visuales
-        self.trail_positions = []
         self.screen_shake = 0
         
     def reset_game(self):
@@ -78,33 +108,61 @@ class PongGame:
             'size': 12,
             'speed_x': random.choice([-6, 6]),
             'speed_y': random.choice([-4, 4]),
-            'max_speed': 12
+            'max_speed': 15 # Increased max speed slightly for more dynamic play
         }
         
         # Configuración del juego
         self.winning_score = 5
-        self.ai_enabled = True
-        self.ai_difficulty = 0.8  # 0.0 a 1.0
+        self.ai_enabled = True # AI enabled by default
+        self.ai_difficulty = 0.8  # 0.0 a 1.0 (0.8 is a good starting point)
         
         # Efectos
-        self.last_hit = None
-        self.ball_trail = []
+        self.last_hit = None # To highlight the paddle that hit the ball
+        self.ball_trail = [] # For ball trail effect
         
-    def play_beep(self, frequency=800, duration=100):
-        """Reproducir sonido beep"""
+    def play_beep(self, frequency=800, duration=100, volume=0.08):
+        """Reproducir sonido beep suave"""
         try:
             sample_rate = 22050
             frames = int(duration * sample_rate / 1000)
             arr = []
             for i in range(frames):
-                wave = 4096 * (frequency * 2 * 3.14159 * i / sample_rate) % (2 * 3.14159)
-                arr.append([int(32767 * 0.1 * (wave - 3.14159) / 3.14159)] * 2)
+                # Simple sine wave for a soft beep
+                amplitude = 16383 * volume * math.sin(2 * math.pi * frequency * i / sample_rate)
+                arr.append([int(amplitude)] * 2) # Stereo sound
             
             sound = pygame.sndarray.make_sound(pygame.array.array('h', arr))
+            sound.set_volume(volume)
             sound.play()
-        except:
-            pass
+        except Exception as e:
+            # print(f"Error playing sound: {e}") # For debugging, can be removed
+            pass # Fail silently if there's no audio or an error
     
+    def draw_rounded_rect(self, surface, color, rect, radius=8):
+        """Dibujar rectángulo con bordes redondeados"""
+        if radius > 0:
+            pygame.draw.rect(surface, color, rect, border_radius=radius)
+        else:
+            pygame.draw.rect(surface, color, rect)
+    
+    def draw_shadow_rect(self, surface, rect, radius=8, shadow_offset=2, alpha=20):
+        """Dibujar rectángulo con sombra sutil"""
+        shadow_rect = rect.copy()
+        shadow_rect.x += shadow_offset
+        shadow_rect.y += shadow_offset
+        
+        # Create a surface for the shadow with alpha channel
+        shadow_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+        pygame.draw.rect(shadow_surface, (0, 0, 0, alpha), (0, 0, rect.width, rect.height), border_radius=radius)
+        surface.blit(shadow_surface, (shadow_rect.x, shadow_rect.y))
+
+    def toggle_theme(self):
+        """Alternar entre modo claro y oscuro"""
+        self.dark_mode = not self.dark_mode
+        theme_name = 'dark' if self.dark_mode else 'light'
+        self.colors = self.themes[theme_name].copy()
+        self.play_beep(800, 80)
+        
     def handle_events(self):
         """Manejar eventos"""
         for event in pygame.event.get():
@@ -117,6 +175,7 @@ class PongGame:
                         return False
                     else:
                         self.game_state = "menu"
+                    self.play_beep(600, 50)
                 
                 elif event.key == pygame.K_SPACE:
                     if self.game_state == "menu":
@@ -127,8 +186,8 @@ class PongGame:
                     elif self.game_state == "paused":
                         self.game_state = "playing"
                     elif self.game_state == "game_over":
-                        self.game_state = "menu"
-                    
+                        self.game_state = "menu" # Go back to menu from game over
+                        self.reset_game() # Reset game state for next play
                     self.play_beep(600, 100)
                 
                 elif event.key == pygame.K_r and self.game_state != "playing":
@@ -139,6 +198,9 @@ class PongGame:
                 elif event.key == pygame.K_a:
                     self.ai_enabled = not self.ai_enabled
                     self.play_beep(1000, 50)
+
+                elif event.key == pygame.K_t: # Toggle theme
+                    self.toggle_theme()
         
         return True
     
@@ -169,31 +231,36 @@ class PongGame:
         # Verificar condición de victoria
         if self.player1['score'] >= self.winning_score or self.player2['score'] >= self.winning_score:
             self.game_state = "game_over"
-            self.play_beep(400, 1000)
+            self.play_beep(400, 1000) # Longer beep for game over
     
     def update_ai(self):
         """Actualizar AI del jugador 2"""
-        ball_center_y = self.ball['y']
+        ball_center_y = self.ball['y'] + self.ball['size'] // 2
         paddle_center_y = self.player2['y'] + self.player2['height'] // 2
         
-        # Calcular diferencia
+        # Calculate difference
         diff = ball_center_y - paddle_center_y
         
-        # AI con dificultad ajustable
-        move_threshold = 20 * (1 - self.ai_difficulty)
-        move_speed = self.player2['speed'] * self.ai_difficulty
+        # AI with adjustable difficulty
+        # Lower move_threshold means AI is more precise and reacts to smaller differences
+        move_threshold = 10 * (1.0 - self.ai_difficulty) 
+        # move_speed determines how fast AI reacts, scaled by difficulty
+        move_speed = self.player2['speed'] * self.ai_difficulty 
         
         if abs(diff) > move_threshold:
             if diff > 0 and self.player2['y'] < self.height - self.player2['height']:
+                # Move down, limited by actual paddle speed and remaining difference
                 self.player2['y'] += min(move_speed, diff)
             elif diff < 0 and self.player2['y'] > 0:
+                # Move up, limited by actual paddle speed and remaining difference
                 self.player2['y'] += max(-move_speed, diff)
     
     def update_ball(self):
         """Actualizar posición y colisiones de la pelota"""
-        # Guardar posición para trail
+        # Add current ball position to trail
         self.ball_trail.append((self.ball['x'], self.ball['y']))
-        if len(self.ball_trail) > 8:
+        # Keep trail length managed
+        if len(self.ball_trail) > 10: # Slightly longer trail for visual effect
             self.ball_trail.pop(0)
         
         # Mover pelota
@@ -203,107 +270,130 @@ class PongGame:
         # Colisión con paredes superior e inferior
         if self.ball['y'] <= 0 or self.ball['y'] >= self.height - self.ball['size']:
             self.ball['speed_y'] = -self.ball['speed_y']
-            self.play_beep(600, 100)
+            self.play_beep(600, 60) # Shorter beep for wall collision
             self.screen_shake = 5
         
         # Colisión con paletas
         ball_rect = pygame.Rect(self.ball['x'], self.ball['y'], self.ball['size'], self.ball['size'])
         player1_rect = pygame.Rect(self.player1['x'], self.player1['y'], 
-                                  self.player1['width'], self.player1['height'])
+                                   self.player1['width'], self.player1['height'])
         player2_rect = pygame.Rect(self.player2['x'], self.player2['y'], 
-                                  self.player2['width'], self.player2['height'])
+                                   self.player2['width'], self.player2['height'])
         
         # Colisión con jugador 1
         if ball_rect.colliderect(player1_rect) and self.ball['speed_x'] < 0:
-            self.handle_paddle_collision(self.player1)
+            self.handle_paddle_collision(self.player1, ball_rect)
             self.last_hit = "player1"
         
         # Colisión con jugador 2
         elif ball_rect.colliderect(player2_rect) and self.ball['speed_x'] > 0:
-            self.handle_paddle_collision(self.player2)
+            self.handle_paddle_collision(self.player2, ball_rect)
             self.last_hit = "player2"
         
         # Gol
         if self.ball['x'] < -self.ball['size']:
             self.player2['score'] += 1
             self.reset_ball()
-            self.play_beep(300, 300)
+            self.play_beep(300, 300) # Goal sound
         elif self.ball['x'] > self.width:
             self.player1['score'] += 1
             self.reset_ball()
-            self.play_beep(300, 300)
+            self.play_beep(300, 300) # Goal sound
     
-    def handle_paddle_collision(self, paddle):
-        """Manejar colisión con paleta"""
+    def handle_paddle_collision(self, paddle, ball_rect):
+        """Manejar colisión con paleta, ajustar rebote y velocidad"""
         # Invertir dirección X
         self.ball['speed_x'] = -self.ball['speed_x']
         
-        # Calcular ángulo basado en dónde golpeó la paleta
-        ball_center = self.ball['y'] + self.ball['size'] // 2
-        paddle_center = paddle['y'] + paddle['height'] // 2
-        hit_pos = (ball_center - paddle_center) / (paddle['height'] // 2)
+        # Calculate hit position relative to paddle center (-1 to 1)
+        ball_center_y = ball_rect.centery
+        paddle_center_y = paddle['y'] + paddle['height'] // 2
         
-        # Modificar velocidad Y basada en el ángulo
-        self.ball['speed_y'] = hit_pos * 6
+        # Normalize the hit position: -0.5 for top, 0 for middle, 0.5 for bottom
+        relative_intersect_y = (paddle_center_y - ball_center_y) / (paddle['height'] / 2)
         
-        # Aumentar velocidad gradualmente
+        # Adjust vertical speed based on where the ball hit the paddle
+        # More extreme hits (closer to top/bottom edge) result in higher vertical speed
+        bounce_angle_factor = 0.75 # Adjust to control max vertical bounce
+        self.ball['speed_y'] = -relative_intersect_y * self.ball['max_speed'] * bounce_angle_factor
+        
+        # Increase horizontal speed gradually
         speed_multiplier = 1.05
         self.ball['speed_x'] *= speed_multiplier
-        self.ball['speed_y'] *= speed_multiplier
         
-        # Limitar velocidad máxima
-        if abs(self.ball['speed_x']) > self.ball['max_speed']:
-            self.ball['speed_x'] = self.ball['max_speed'] * (1 if self.ball['speed_x'] > 0 else -1)
-        if abs(self.ball['speed_y']) > self.ball['max_speed']:
-            self.ball['speed_y'] = self.ball['max_speed'] * (1 if self.ball['speed_y'] > 0 else -1)
+        # Limit total speed to max_speed
+        current_speed = math.sqrt(self.ball['speed_x']**2 + self.ball['speed_y']**2)
+        if current_speed > self.ball['max_speed']:
+            scale_factor = self.ball['max_speed'] / current_speed
+            self.ball['speed_x'] *= scale_factor
+            self.ball['speed_y'] *= scale_factor
         
-        self.play_beep(800, 100)
+        self.play_beep(800, 80) # Paddle hit sound
         self.screen_shake = 3
     
     def reset_ball(self):
-        """Reiniciar pelota al centro"""
+        """Reiniciar pelota al centro con dirección aleatoria"""
         self.ball['x'] = self.width // 2
         self.ball['y'] = self.height // 2
+        # Random initial direction, ensuring not perfectly horizontal
         self.ball['speed_x'] = random.choice([-6, 6])
-        self.ball['speed_y'] = random.choice([-4, 4])
+        self.ball['speed_y'] = random.uniform(-4, 4) # Small random vertical component
+        while abs(self.ball['speed_y']) < 1.0: # Ensure some vertical movement
+            self.ball['speed_y'] = random.uniform(-4, 4)
         self.ball_trail.clear()
     
     def draw_menu(self):
-        """Dibujar menú principal"""
+        """Dibujar menú principal con estilo moderno"""
         self.screen.fill(self.colors['bg'])
         
-        # Título
-        title = "RETRO PONG"
-        text = self.font_large.render(title, True, self.colors['green'])
-        x = (self.width - text.get_width()) // 2
-        self.screen.blit(text, (x, 150))
+        # Title
+        title_text = self.fonts['title'].render("PONG MODERN", True, self.colors['accent_player1'])
+        title_x = (self.width - title_text.get_width()) // 2
+        self.screen.blit(title_text, (title_x, 100))
         
-        # Opciones
+        # Menu card
+        card_width = 500
+        card_height = 300
+        card_x = (self.width - card_width) // 2
+        card_y = self.height // 2 - card_height // 2 + 50
+        
+        card_rect = pygame.Rect(card_x, card_y, card_width, card_height)
+        self.draw_shadow_rect(self.screen, card_rect, radius=12, shadow_offset=8, alpha=self.colors['shadow_dark'][3])
+        self.draw_rounded_rect(self.screen, self.colors['card_bg'], card_rect, 12)
+        pygame.draw.rect(self.screen, self.colors['border'], card_rect, 1, border_radius=12)
+        
+        # Options
+        options_y_start = card_y + 40
+        options_x_offset = card_x + 50
+        
         options = [
-            "SPACE - START GAME",
-            "A - TOGGLE AI (Current: " + ("ON" if self.ai_enabled else "OFF") + ")",
-            "ESC - EXIT"
+            ("SPACE - START GAME", self.colors['accent_player1']),
+            (f"A - TOGGLE AI (Current: {'ON' if self.ai_enabled else 'OFF'})", self.colors['text_primary']),
+            ("ESC - EXIT", self.colors['text_secondary'])
         ]
         
-        for i, option in enumerate(options):
-            color = self.colors['amber'] if i == 0 else self.colors['white']
-            text = self.font_medium.render(option, True, color)
-            x = (self.width - text.get_width()) // 2
-            self.screen.blit(text, (x, 300 + i * 50))
+        for i, (option_text, color) in enumerate(options):
+            text_render = self.fonts['medium'].render(option_text, True, color)
+            # Center horizontally within the card
+            text_x = card_x + (card_width - text_render.get_width()) // 2
+            self.screen.blit(text_render, (text_x, options_y_start + i * 60))
         
-        # Controles
-        controls = [
-            "PLAYER 1: W/S",
-            "PLAYER 2: UP/DOWN (if AI off)"
-        ]
-        
-        for i, control in enumerate(controls):
-            text = self.font_small.render(control, True, self.colors['gray'])
-            x = (self.width - text.get_width()) // 2
-            self.screen.blit(text, (x, 450 + i * 25))
-    
+        # Controls at bottom of card
+        controls_label = self.fonts['small'].render("CONTROLS:", True, self.colors['text_secondary'])
+        controls_label_x = card_x + (card_width - controls_label.get_width()) // 2
+        self.screen.blit(controls_label, (controls_label_x, card_y + 180))
+
+        controls_p1 = self.fonts['small'].render("PLAYER 1: W / S", True, self.colors['text_primary'])
+        controls_p2 = self.fonts['small'].render("PLAYER 2: UP / DOWN (if AI off)", True, self.colors['text_primary'])
+
+        controls_p1_x = card_x + (card_width - controls_p1.get_width()) // 2
+        controls_p2_x = card_x + (card_width - controls_p2.get_width()) // 2
+
+        self.screen.blit(controls_p1, (controls_p1_x, card_y + 210))
+        self.screen.blit(controls_p2, (controls_p2_x, card_y + 235))
+
     def draw_game(self):
-        """Dibujar juego en progreso"""
+        """Dibujar juego en progreso con estilo moderno"""
         # Aplicar screen shake
         shake_x = random.randint(-self.screen_shake, self.screen_shake) if self.screen_shake > 0 else 0
         shake_y = random.randint(-self.screen_shake, self.screen_shake) if self.screen_shake > 0 else 0
@@ -312,126 +402,162 @@ class PongGame:
         self.screen.fill(self.colors['bg'])
         
         # Línea central punteada
-        for y in range(0, self.height, 20):
-            pygame.draw.rect(self.screen, self.colors['gray'], 
-                           (self.width // 2 - 2 + shake_x, y + shake_y, 4, 10))
+        dash_length = 10
+        gap_length = 10
+        for y in range(0, self.height, dash_length + gap_length):
+            dash_rect = pygame.Rect(self.width // 2 - 2 + shake_x, y + shake_y, 4, dash_length)
+            self.draw_rounded_rect(self.screen, self.colors['grid_line'], dash_rect, 2)
         
         # Paletas
-        # Jugador 1
-        color1 = self.colors['green'] if self.last_hit == "player1" else self.colors['white']
-        pygame.draw.rect(self.screen, color1, 
-                        (self.player1['x'] + shake_x, self.player1['y'] + shake_y, 
-                         self.player1['width'], self.player1['height']))
+        # Player 1
+        p1_color = self.colors['accent_player1']
+        p1_rect = pygame.Rect(self.player1['x'] + shake_x, self.player1['y'] + shake_y, 
+                              self.player1['width'], self.player1['height'])
+        self.draw_shadow_rect(self.screen, p1_rect, radius=8, shadow_offset=2, alpha=self.colors['shadow_light'][3])
+        self.draw_rounded_rect(self.screen, p1_color, p1_rect, 8)
+        # Highlight for player 1 paddle
+        p1_highlight_rect = pygame.Rect(p1_rect.x + 1, p1_rect.y + 1, p1_rect.width - 2, p1_rect.height // 5)
+        p1_highlight_color = tuple(min(255, c + 30) for c in p1_color)
+        self.draw_rounded_rect(self.screen, p1_highlight_color, p1_highlight_rect, 6)
         
-        # Jugador 2
-        color2 = self.colors['green'] if self.last_hit == "player2" else self.colors['white']
-        pygame.draw.rect(self.screen, color2, 
-                        (self.player2['x'] + shake_x, self.player2['y'] + shake_y, 
-                         self.player2['width'], self.player2['height']))
+        # Player 2
+        p2_color = self.colors['accent_player2']
+        p2_rect = pygame.Rect(self.player2['x'] + shake_x, self.player2['y'] + shake_y, 
+                              self.player2['width'], self.player2['height'])
+        self.draw_shadow_rect(self.screen, p2_rect, radius=8, shadow_offset=2, alpha=self.colors['shadow_light'][3])
+        self.draw_rounded_rect(self.screen, p2_color, p2_rect, 8)
+        # Highlight for player 2 paddle
+        p2_highlight_rect = pygame.Rect(p2_rect.x + 1, p2_rect.y + 1, p2_rect.width - 2, p2_rect.height // 5)
+        p2_highlight_color = tuple(min(255, c + 30) for c in p2_color)
+        self.draw_rounded_rect(self.screen, p2_highlight_color, p2_highlight_rect, 6)
         
-        # Trail de la pelota
+        # Ball Trail
         for i, (trail_x, trail_y) in enumerate(self.ball_trail):
-            alpha = i / len(self.ball_trail)
-            size = int(self.ball['size'] * alpha)
-            if size > 0:
-                trail_surface = pygame.Surface((size, size))
-                trail_surface.set_alpha(int(255 * alpha))
-                trail_surface.fill(self.colors['amber'])
-                self.screen.blit(trail_surface, (trail_x + shake_x, trail_y + shake_y))
+            alpha_multiplier = (i + 1) / len(self.ball_trail) # Fade from transparent to opaque
+            alpha = int(255 * alpha_multiplier * 0.4) # Max alpha 40%
+            size_scaled = int(self.ball['size'] * alpha_multiplier * 0.8) # Smaller, fading size
+            
+            if size_scaled > 0:
+                trail_surface = pygame.Surface((size_scaled, size_scaled), pygame.SRCALPHA)
+                trail_color = self.colors['ball']
+                
+                # Apply alpha to trail color
+                trail_color_with_alpha = (trail_color[0], trail_color[1], trail_color[2], alpha)
+                
+                pygame.draw.circle(trail_surface, trail_color_with_alpha, 
+                                   (size_scaled // 2, size_scaled // 2), size_scaled // 2, 0)
+                self.screen.blit(trail_surface, (trail_x + shake_x + (self.ball['size'] - size_scaled) // 2, 
+                                                 trail_y + shake_y + (self.ball['size'] - size_scaled) // 2))
         
         # Pelota
-        pygame.draw.rect(self.screen, self.colors['white'], 
-                        (self.ball['x'] + shake_x, self.ball['y'] + shake_y, 
-                         self.ball['size'], self.ball['size']))
-        
+        ball_rect = pygame.Rect(self.ball['x'] + shake_x, self.ball['y'] + shake_y, 
+                                self.ball['size'], self.ball['size'])
+        self.draw_shadow_rect(self.screen, ball_rect, radius=self.ball['size'] // 2, shadow_offset=2, alpha=self.colors['shadow_light'][3])
+        pygame.draw.circle(self.screen, self.colors['ball'], ball_rect.center, self.ball['size'] // 2)
+        # Highlight for ball
+        ball_highlight_rect = pygame.Rect(ball_rect.x + 1, ball_rect.y + 1, ball_rect.width - 2, ball_rect.height // 3)
+        ball_highlight_color = tuple(min(255, c + 40) for c in self.colors['ball'])
+        pygame.draw.circle(self.screen, ball_highlight_color, (ball_highlight_rect.x + ball_highlight_rect.width // 2, ball_highlight_rect.y + ball_highlight_rect.height // 2), ball_highlight_rect.width // 2 * 0.8)
+
         # Puntuación
         score1_text = str(self.player1['score'])
         score2_text = str(self.player2['score'])
         
-        text1 = self.font_large.render(score1_text, True, self.colors['green'])
-        text2 = self.font_large.render(score2_text, True, self.colors['green'])
+        text1 = self.fonts['large'].render(score1_text, True, self.colors['accent_player1'])
+        text2 = self.fonts['large'].render(score2_text, True, self.colors['accent_player2'])
         
-        self.screen.blit(text1, (self.width // 4 - text1.get_width() // 2 + shake_x, 50 + shake_y))
-        self.screen.blit(text2, (3 * self.width // 4 - text2.get_width() // 2 + shake_x, 50 + shake_y))
+        # Position scores closer to the center, higher up
+        self.screen.blit(text1, (self.width // 2 - 100 - text1.get_width() // 2 + shake_x, 50 + shake_y))
+        self.screen.blit(text2, (self.width // 2 + 100 - text2.get_width() // 2 + shake_x, 50 + shake_y))
         
         # Indicadores de jugador
-        p1_label = "PLAYER 1" if not self.ai_enabled else "HUMAN"
-        p2_label = "PLAYER 2" if not self.ai_enabled else "COMPUTER"
+        p1_label = "HUMAN"
+        p2_label = "COMPUTER" if self.ai_enabled else "HUMAN"
         
-        text1 = self.font_small.render(p1_label, True, self.colors['amber'])
-        text2 = self.font_small.render(p2_label, True, self.colors['amber'])
+        text1 = self.fonts['small'].render(p1_label, True, self.colors['text_secondary'])
+        text2 = self.fonts['small'].render(p2_label, True, self.colors['text_secondary'])
         
-        self.screen.blit(text1, (50 + shake_x, 20 + shake_y))
-        self.screen.blit(text2, (self.width - 150 + shake_x, 20 + shake_y))
+        self.screen.blit(text1, (self.player1['x'] - 10 + shake_x, 20 + shake_y))
+        self.screen.blit(text2, (self.player2['x'] + self.player2['width'] - text2.get_width() + 10 + shake_x, 20 + shake_y))
         
         # Controles en la parte inferior
-        controls = "W/S: P1 Move • " + ("AI Active" if self.ai_enabled else "↑/↓: P2 Move") + " • SPACE: Pause • ESC: Menu"
-        text = self.font_small.render(controls, True, self.colors['gray'])
-        x = (self.width - text.get_width()) // 2
-        self.screen.blit(text, (x + shake_x, self.height - 30 + shake_y))
-    
-    def draw_pause(self):
-        """Dibujar pantalla de pausa"""
-        self.draw_game()  # Dibujar juego de fondo
+        controls_main = f"W/S: P1 Move • {'AI Active' if self.ai_enabled else '↑/↓: P2 Move'}"
+        controls_misc = "SPACE: Pause • T: Theme • ESC: Menu"
         
-        # Overlay
-        overlay = pygame.Surface((self.width, self.height))
-        overlay.set_alpha(128)
-        overlay.fill(self.colors['bg'])
+        text_main = self.fonts['small'].render(controls_main, True, self.colors['text_secondary'])
+        text_misc = self.fonts['small'].render(controls_misc, True, self.colors['text_secondary'])
+
+        x_main = (self.width - text_main.get_width()) // 2
+        x_misc = (self.width - text_misc.get_width()) // 2
+
+        self.screen.blit(text_main, (x_main + shake_x, self.height - 50 + shake_y))
+        self.screen.blit(text_misc, (x_misc + shake_x, self.height - 25 + shake_y))
+    
+    def draw_overlay(self, title, subtitle="", action_text=""):
+        """Dibujar overlay moderno (copiado de TetrisModern)"""
+        overlay = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+        overlay.fill(self.colors['overlay'])
         self.screen.blit(overlay, (0, 0))
         
-        # Texto de pausa
-        pause_text = "PAUSED"
-        text = self.font_large.render(pause_text, True, self.colors['green'])
-        x = (self.width - text.get_width()) // 2
-        y = self.height // 2 - 50
-        self.screen.blit(text, (x, y))
+        # Card principal
+        card_width = 400
+        card_height = 200
+        card_x = (self.width - card_width) // 2
+        card_y = (self.height - card_height) // 2
         
-        resume_text = "PRESS SPACE TO RESUME"
-        text = self.font_medium.render(resume_text, True, self.colors['white'])
-        x = (self.width - text.get_width()) // 2
-        self.screen.blit(text, (x, y + 60))
+        card_rect = pygame.Rect(card_x, card_y, card_width, card_height)
+        self.draw_shadow_rect(self.screen, card_rect, radius=12, shadow_offset=8, alpha=self.colors['shadow_dark'][3])
+        self.draw_rounded_rect(self.screen, self.colors['card_bg'], card_rect, 12)
+        pygame.draw.rect(self.screen, self.colors['border'], card_rect, 1, border_radius=12)
+        
+        # Título
+        title_text = self.fonts['large'].render(title, True, self.colors['text_primary'])
+        title_x = card_x + (card_width - title_text.get_width()) // 2
+        self.screen.blit(title_text, (title_x, card_y + 40))
+        
+        # Subtítulo (si existe)
+        if subtitle:
+            subtitle_text = self.fonts['medium'].render(subtitle, True, self.colors['text_secondary'])
+            subtitle_x = card_x + (card_width - subtitle_text.get_width()) // 2
+            self.screen.blit(subtitle_text, (subtitle_x, card_y + 85))
+            
+        # Texto de acción (si existe)
+        if action_text:
+            action_font = self.fonts['medium'] if not subtitle else self.fonts['small']
+            action_text_render = action_font.render(action_text, True, self.colors['accent_player1'])
+            action_x = card_x + (card_width - action_text_render.get_width()) // 2
+            action_y = card_y + (130 if not subtitle else 150)
+            self.screen.blit(action_text_render, (action_x, action_y))
+    
+    def draw_pause(self):
+        """Dibujar pantalla de pausa con overlay moderno"""
+        self.draw_game() # Draw game in background
+        self.draw_overlay("PAUSED", "Game is on hold", "PRESS SPACE TO RESUME")
     
     def draw_game_over(self):
-        """Dibujar pantalla de game over"""
-        self.screen.fill(self.colors['bg'])
-        
-        # Determinar ganador
+        """Dibujar pantalla de game over con overlay moderno"""
+        # Determine winner
         if self.player1['score'] >= self.winning_score:
-            winner = "PLAYER 1 WINS!" if not self.ai_enabled else "HUMAN WINS!"
-            winner_color = self.colors['green']
+            winner_text = "HUMAN WINS!"
+            winner_color = self.colors['accent_player1']
         else:
-            winner = "PLAYER 2 WINS!" if not self.ai_enabled else "COMPUTER WINS!"
-            winner_color = self.colors['red']
+            winner_text = "COMPUTER WINS!" if self.ai_enabled else "HUMAN 2 WINS!"
+            winner_color = self.colors['accent_player2']
         
-        # Texto de victoria
-        text = self.font_large.render(winner, True, winner_color)
-        x = (self.width - text.get_width()) // 2
-        y = self.height // 2 - 100
-        self.screen.blit(text, (x, y))
-        
-        # Puntuación final
-        final_score = f"FINAL SCORE: {self.player1['score']} - {self.player2['score']}"
-        text = self.font_medium.render(final_score, True, self.colors['white'])
-        x = (self.width - text.get_width()) // 2
-        self.screen.blit(text, (x, y + 80))
-        
-        # Opciones
-        options = [
-            "R - PLAY AGAIN",
-            "SPACE - MAIN MENU",
-            "ESC - EXIT"
-        ]
-        
-        for i, option in enumerate(options):
-            text = self.font_medium.render(option, True, self.colors['amber'])
-            x = (self.width - text.get_width()) // 2
-            self.screen.blit(text, (x, y + 150 + i * 40))
+        final_score_text = f"FINAL SCORE: {self.player1['score']} - {self.player2['score']}"
+        action_text = "SPACE - MAIN MENU / R - PLAY AGAIN"
+
+        self.draw_overlay(winner_text, final_score_text, action_text)
     
     def draw_scanlines(self):
-        """Dibujar efecto de líneas de escaneo"""
-        for y in range(0, self.height, 3):
-            pygame.draw.line(self.screen, (0, 0, 0, 30), (0, y), (self.width, y))
+        """Dibujar efecto de líneas de escaneo sutiles y que combinen con el tema"""
+        scanline_surface = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+        # Use a slightly darker version of the background color with transparency
+        scanline_color = self.colors['scanline_color']
+        
+        for y in range(0, self.height, 3): # Draw every 3 pixels
+            pygame.draw.line(scanline_surface, scanline_color, (0, y), (self.width, y))
+        self.screen.blit(scanline_surface, (0, 0))
     
     def run(self):
         """Loop principal del juego"""
@@ -454,17 +580,18 @@ class PongGame:
             elif self.game_state == "game_over":
                 self.draw_game_over()
             
-            # Efectos retro
+            # Efectos visuales que siempre se dibujan en la parte superior
             self.draw_scanlines()
             
             pygame.display.flip()
-            self.clock.tick(60)
+            self.clock.tick(60) # Maintain 60 FPS
         
         pygame.quit()
+        sys.exit()
 
 def main():
     """Función principal"""
-    game = PongGame()
+    game = PongModern()
     game.run()
 
 if __name__ == "__main__":

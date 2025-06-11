@@ -1,0 +1,66 @@
+[
+  {
+    "title": "SNAKE RETRO",
+    "filename": "snake.py",
+    "category": "CLASSIC",
+    "description": "Classic snake game with retro twist and growing mechanics",
+    "builtin": true,
+    "playable": true
+  },
+  {
+    "title": "RETRO PONG",
+    "filename": "pong.py", 
+    "category": "ARCADE",
+    "description": "Two-player pong game with AI opponent",
+    "builtin": true,
+    "playable": true
+  },
+  {
+    "title": "TETRIS RETRO",
+    "filename": "tetris.py",
+    "category": "PUZZLE",
+    "description": "Falling blocks puzzle game with authentic mechanics",
+    "builtin": true,
+    "playable": true
+  },
+  {
+    "title": "SPACE INVADERS",
+    "filename": "invaders.py",
+    "category": "ARCADE", 
+    "description": "Defend Earth from alien invasion with power-ups",
+    "builtin": true,
+    "playable": true
+  },
+  {
+    "title": "BREAKOUT RETRO",
+    "filename": "breakout.py",
+    "category": "ARCADE",
+    "description": "Break all bricks with power-ups and combos",
+    "builtin": true,
+    "playable": true
+  },
+  {
+    "title": "FROGGER CLONE",
+    "filename": "frogger.py",
+    "category": "ACTION",
+    "description": "Cross the road and river safely",
+    "builtin": true,
+    "playable": false
+  },
+  {
+    "title": "CENTIPEDE",
+    "filename": "centipede.py",
+    "category": "ARCADE",
+    "description": "Shoot the descending centipede",
+    "builtin": true,
+    "playable": false
+  },
+  {
+    "title": "ASTEROIDS",
+    "filename": "asteroids.py",
+    "category": "ACTION",
+    "description": "Destroy asteroids in space",
+    "builtin": true,
+    "playable": false
+  }
+]
